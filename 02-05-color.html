@@ -4,7 +4,7 @@
 		<meta charset="UTF-8" />
 		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>mouse</title>
+		<title>color</title>
 	</head>
 	<style>
 		* {
@@ -87,8 +87,10 @@
         `;
 
 		const FRAGMENT_SHADER_SOURCE = `
+            precision mediump float;
+            uniform vec2 uColor;
             void main() {
-                gl_FragColor = vec4( 1.0, 0.0, 0.0, 1.0 );
+                gl_FragColor = vec4(uColor.r, uColor.g, 0.0, 1.0);
             }
         `;
 		// 创建着色器对象
@@ -97,8 +99,10 @@
 
 		// 创建程序对象
 		const program = createProgram(gl, vertexShader, fragmentShader);
-		// 获取地址
+		// 获取顶点着色器地址变量
 		const aPosition = gl.getAttribLocation(program, 'aPosition');
+		// 获取片元着色器的地址变量
+		const uColor = gl.getUniformLocation(program, 'uColor');
 
 		const points = [];
 		ctx.onclick = evt => {
@@ -106,7 +110,6 @@
 			const y = evt.clientY;
 
 			const domPosition = evt.target.getBoundingClientRect();
-			console.log(JSON.stringify(domPosition), ctx.offsetTop, ctx.offsetLeft, x, y);
 
 			const domX = x - domPosition.left;
 			const domY = y - domPosition.top;
@@ -122,14 +125,11 @@
 				clickY,
 			});
 
-			// for (let point of points) {
-			// 	// console.log('clickX :', point.clickX, 'clickY: ', point.clickY);
-			// 	gl.vertexAttrib2f(aPosition, point.clickX, point.clickY);
-			// 	gl.drawArrays(gl.POINTS, 0, 1);
-			// }
-
-			gl.vertexAttrib2f(aPosition, clickX, clickY);
-			gl.drawArrays(gl.POINTS, 0, 1);
+            for( let point of points ) {
+                gl.uniform2f(uColor, point.clickX, point.clickY);
+                gl.vertexAttrib2f(aPosition, point.clickX, point.clickY);
+                gl.drawArrays(gl.POINTS, 0, 1);
+            }
 		};
 	</script>
 </html>
