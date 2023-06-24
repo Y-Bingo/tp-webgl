@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>varying</title>
+	</head>
+	<style>
+		* {
+			margin: 0px;
+			padding: 0px;
+		}
+		#demo {
+			/* display: block;
+			 */
+			position: relative;
+		}
+		#canvas {
+			display: block;
+			background: yellow;
+			margin: 50px auto 0;
+		}
+	</style>
+	<body>
+		<div id="demo">
+			<canvas id="canvas" width="400" height="400"></canvas>
+		</div>
+	</body>
+	<script>
+		function createShader(gl, type, source) {
+			const shader = gl.createShader(type);
+			// 指定着色器的源码
+			gl.shaderSource(shader, source);
+			// 编译着色器
+			gl.compileShader(shader);
+			return shader;
+		}
+
+		function createProgram(gl, vertexShader, fragmentShader) {
+			const program = gl.createProgram();
+
+			gl.attachShader(program, vertexShader);
+			gl.attachShader(program, fragmentShader);
+
+			gl.linkProgram(program);
+
+			gl.useProgram(program);
+
+			return program;
+		}
+
+		const ctx = document.querySelector('#canvas');
+		const gl = ctx.getContext('webgl');
+
+		// 创建着色器源码
+		const VERTEX_SHADER_SOURCE = `
+            attribute vec4 aPosition;
+            varying vec4 aColor;
+            void main() {
+                aColor = aPosition;
+                gl_Position = aPosition; // 默认值 vec4(0.0, 0.0, 0.0, 1.0);
+            }
+        `;
+
+		const FRAGMENT_SHADER_SOURCE = `
+            precision mediump float;
+            varying vec4 aColor;
+            void main() {
+                gl_FragColor = aColor;
+            }
+        `;
+		// 创建着色器对象
+		const vertexShader = createShader(gl, gl.VERTEX_SHADER, VERTEX_SHADER_SOURCE);
+		const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, FRAGMENT_SHADER_SOURCE);
+
+		// 创建程序对象
+		const program = createProgram(gl, vertexShader, fragmentShader);
+		// 获取顶点着色器地址变量
+		const points = new Float32Array([-0.5, -0.5, 0.5, -0.5, 0.0, 0.5]);
+        
+		const aPosition = gl.getAttribLocation(program, 'aPosition');
+		const buffer = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+		gl.bufferData(gl.ARRAY_BUFFER, points, gl.STATIC_DRAW);
+		gl.vertexAttribPointer(aPosition, 2, gl.FLOAT, false, 0, 0);
+		gl.enableVertexAttribArray(aPosition);
+
+		gl.drawArrays(gl.TRIANGLES, 0, 3);
+	</script>
+</html>
