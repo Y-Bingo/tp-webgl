@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>压缩纹理</title>
+	</head>
+	<style>
+		* {
+			margin: 0px;
+			padding: 0px;
+		}
+		#demo {
+			/* display: block;
+			 */
+			position: relative;
+		}
+		#canvas {
+			display: block;
+			background: rgb(200, 200, 198);
+			margin: 50px auto 0;
+		}
+	</style>
+	<body>
+		<div id="demo">
+			<canvas id="canvas" width="400" height="400"></canvas>
+		</div>
+	</body>
+	<script>
+		function createShader(gl, type, source) {
+			const shader = gl.createShader(type);
+			// 指定着色器的源码
+			gl.shaderSource(shader, source);
+			// 编译着色器
+			gl.compileShader(shader);
+			return shader;
+		}
+
+		function createProgram(gl, vertexShader, fragmentShader) {
+			const program = gl.createProgram();
+
+			gl.attachShader(program, vertexShader);
+			gl.attachShader(program, fragmentShader);
+
+			gl.linkProgram(program);
+
+			gl.useProgram(program);
+
+			return program;
+		}
+
+		function createTexture(img, location, index) {
+			// 创建纹理对象
+			const texture = gl.createTexture();
+
+			// 翻转 图片 Y 轴
+			gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
+
+			// 开启一个纹理单元
+			gl.activeTexture(gl[`TEXTURE${index}`]);
+
+			// 绑定纹理对象
+			gl.bindTexture(gl.TEXTURE_2D, texture);
+
+			// 处理放大缩小的逻辑
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+			gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+
+			gl.uniform1i(location, index);
+		}
+
+		function getImgByImageElement(url, location, index) {
+			return new Promise(resolve => {
+				const img = new Image();
+				img.crossOrigin = 'anonymous';
+				img.onload = () => {
+					createTexture(img, location, index);
+					resolve();
+				};
+
+				img.src = url;
+			});
+		}
+
+		function getImgByXhr(url, location, index) {
+			return new Promise(resolve => {
+				const request = new XMLHttpRequest();
+				request.responseType = 'blob';
+				request.open('GET', url, true);
+				request.onload = function () {
+					const img = new Image();
+					img.onload = () => {
+						createTexture(img, location, index);
+						window.URL.revokeObjectURL(img.src);
+						resolve();
+					};
+					img.src = window.URL.createObjectURL(request.response);
+				};
+				request.send();
+			});
+		}
+
+		function getCompressImgByXhr(url, location, index) {
+			return new Promise(resolve => {
+				const request = new XMLHttpRequest();
+				request.responseType = 'arraybuffer';
+				request.open('GET', url, true);
+				request.onload = function () {
+					const textureData = new Uint8Array(request.response);
+					var textureWidth = (textureData[9] << 16) + (textureData[8] << 8) + textureData[7];
+					var textureHeight = (textureData[12] << 16) + (textureData[11] << 8) + textureData[10];
+
+					// 创建纹理对象
+					const texture = gl.createTexture();
+
+					// 翻转 图片 Y 轴
+					gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
+
+					// 开启一个纹理单元
+					gl.activeTexture(gl[`TEXTURE${index}`]);
+
+					// 绑定纹理对象
+					gl.bindTexture(gl.TEXTURE_2D, texture);
+
+					// 处理拉伸
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+                    
+                    var ext = gl.getExtension('WEBGL_compressed_texture_astc');
+					// 应用纹理
+					gl.compressedTexImage2D(
+						gl.TEXTURE_2D,
+						0,
+						ext.COMPRESSED_RGBA_ASTC_6x6_KHR,
+						textureWidth,
+						textureHeight,
+						0,
+						textureData.subarray(16),
+					);
+					// gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+
+					gl.uniform1i(location, index);
+					resolve();
+				};
+				request.send();
+			});
+		}
+
+		const ctx = document.querySelector('#canvas');
+		const gl = ctx.getContext('webgl');
+
+		// 创建着色器源码
+		const VERTEX_SHADER_SOURCE = `
+            attribute vec4 aPosition;
+            attribute vec4 aTex;
+            varying vec2 vTex;
+            void main() {
+                gl_Position = aPosition;
+                vTex = vec2(aTex);
+            }
+        `;
+
+		const FRAGMENT_SHADER_SOURCE = `
+            precision mediump float;
+            uniform sampler2D uSampler;
+            varying vec2 vTex;
+            void main() {
+                gl_FragColor = texture2D(uSampler, vTex);
+            }
+        `;
+		// 创建着色器对象
+		const vertexShader = createShader(gl, gl.VERTEX_SHADER, VERTEX_SHADER_SOURCE);
+		const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, FRAGMENT_SHADER_SOURCE);
+
+		// 创建程序对象
+		const program = createProgram(gl, vertexShader, fragmentShader);
+		// 获取顶点着色器地址变量
+		const points = new Float32Array([
+		    -1.0, 1.0, 0.0, 1.0,
+		    -1.0, -1.0, 0.0, 0.0,
+		    1.0, 1.0, 1.0, 1.0,
+		    1.0, -1.0, 1.0, 0.0,
+		]);
+
+		const aPosition = gl.getAttribLocation(program, 'aPosition');
+		const aTex = gl.getAttribLocation(program, 'aTex');
+		const uSampler = gl.getUniformLocation(program, 'uSampler');
+		const BYTE = points.BYTES_PER_ELEMENT;
+
+		const buffer = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+		gl.bufferData(gl.ARRAY_BUFFER, points, gl.STATIC_DRAW);
+
+		gl.vertexAttribPointer(aPosition, 2, gl.FLOAT, false, BYTE * 4, 0);
+		gl.enableVertexAttribArray(aPosition);
+		gl.vertexAttribPointer(aTex, 2, gl.FLOAT, false, BYTE * 4, BYTE * 2);
+		gl.enableVertexAttribArray(aTex);
+
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        // 必须要开启
+		gl.enable(gl.BLEND);
+        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+		Promise.all([getCompressImgByXhr('assets/logo.astc', uSampler, 0)]).then(() => {
+			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+		});
+		console.log('压缩纹理测试');
+	</script>
+</html>
