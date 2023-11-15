@@ -5,3 +5,5 @@ dist
 # npm
 .bin
 .cache
+
+# files
