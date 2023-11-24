@@ -3,18 +3,13 @@ import { createProgram, createShader } from './game_helper.ts';
 const VERTEX_SHADER_SOURCE = `
     attribute vec4 aPosition;
     attribute float aPointSize;
-    varying vec4 vColor;
     void main() {
         gl_Position = aPosition;
-        gl_PointSize = aPointSize;
-        vColor = aPosition;
     }
 `;
 const FRAGMENT_SHADER_SOURCE = `
     precision mediump float;
-    uniform vec3 uColor;
-    uniform float uAlpha;
-    varying vec4 vColor;
+
     void main() {
         gl_FragColor = vColor;
     }
@@ -37,15 +32,10 @@ gl.uniform1f(uAlpha, 1.0);
 gl.uniform3f(uColor, 1.0, 0.4, 0.2);
 
 const POINTS = new Float32Array([
-	0.5, // x
-	0.5, // y
-	10.0, // pSize
-	-0.5, // x
-	0.5, // y
-	20.0, // pSize
-	0.5, // x
-	-0.5, // y
-	30.0, // pSize
+	-1.0, 1.0, 0.0, 1.0, // 左上
+	1.0, 1.0, 0.0, 1.0, // 右上
+	1.0, -1.0, 0.0, 1.0, // 右下
+	-1.0, -1.0, 0.0, 1.0, // 左下
 ]);
 const BYTE = POINTS.BYTES_PER_ELEMENT;
 const buffer = gl.createBuffer();
