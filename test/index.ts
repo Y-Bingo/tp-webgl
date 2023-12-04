@@ -2,19 +2,23 @@ import { createProgram, createShader } from '../utils/game_helper.ts';
 
 const VERTEX_SHADER_SOURCE = `
     attribute vec4 aPosition;
-
-    uniform vec2 uResolution;    
+    attribute vec4 aTex;
+    // varying vec2 vTex;
     
     void main() {
-        vec2 clipSpace = aPosition.xy  / uResolution  * 2.0 - 1.0;
-        gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
+        gl_Position = vec4(aPosition);
+        vTex = vec2(1.0, 1.0);
     }
 `;
 const FRAGMENT_SHADER_SOURCE = `
     precision mediump float;
-    uniform vec4 uColor;
+    
+    uniform sampler2D uImg;
+    // varying vec2 vTex;
+
     void main() {
-        gl_FragColor = uColor;
+        // gl_FragColor = texture2D(uImg, vTex);
+        gl_FragColor = vec4(vTex, 0.0, 1.0);
     }
 `;
 
@@ -28,53 +32,40 @@ const vertexShader = createShader(gl, gl.VERTEX_SHADER, VERTEX_SHADER_SOURCE);
 const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, FRAGMENT_SHADER_SOURCE);
 const program = createProgram(gl, vertexShader, fragmentShader);
 
-const uColor = gl.getUniformLocation(program, 'uColor');
+// const uImg = gl.getUniformLocation(program, 'uImg');
 const aPosition = gl.getAttribLocation(program, 'aPosition');
-const uResolution = gl.getUniformLocation(program, 'uResolution');
+// const aTex = gl.getAttribLocation(program, 'aTex');
 
-// prettier-ignore
-// 顶点坐标
-// const POINTS = new Float32Array([
-//     10, 20,
-//     80, 20,
-//     10, 30,
-//     10, 30,
-//     80, 20,
-//     80, 30,
-// ]);
-
-const buffer = gl.createBuffer();
-gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-// gl.bufferData(gl.ARRAY_BUFFER, POINTS, gl.STATIC_DRAW);
-
-// point
-gl.enableVertexAttribArray(aPosition);
-gl.vertexAttribPointer(aPosition, 2, gl.FLOAT, false, 0, 0);
-
-gl.uniform2f(uResolution, gl.canvas.width, gl.canvas.height);
-
-for (let i = 0; i < 50; i++) {
-	setRectangle(gl, rangeInt(gl.canvas.width), rangeInt(gl.canvas.height), rangeInt(gl.canvas.width) / 2, rangeInt(gl.canvas.height) / 2);
-	gl.uniform4f(uColor, Math.random(), Math.random(), Math.random(), 1);
-	gl.drawArrays(gl.TRIANGLES, 0, 6);
-}
-
-function rangeInt(range) {
-	return Math.floor(Math.random() * range);
-}
-
-function setRectangle(gl, x, y, w, h) {
-	const x1 = x;
-	const x2 = x + w;
-	const y1 = y;
-	const y2 = y + h;
+const img = new Image();
+img.src = './assets/content.png';
+img.onload = () => {
+	// 处理纹理坐标
+	const texCoordBuffer = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
 	// prettier-ignore
 	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
-        x1, y1,
-        x2, y1,
-        x2, y2,
-        x1, y1,
-        x1, y2,
-        x2, y2,
+        0.0,  0.0,
+        1.0,  0.0,
+        0.0,  1.0,
+        0.0,  1.0,
+        1.0,  0.0,
+        1.0,  1.0
     ]), gl.STATIC_DRAW);
-}
+	gl.enableVertexAttribArray(aPosition);
+	gl.vertexAttribPointer(aPosition, 2, gl.FLOAT, false, 0, 0);
+	// gl.enableVertexAttribArray(aTex);
+	// gl.vertexAttribPointer(aTex, 2, gl.FLOAT, false, 0, 0);
+	// gl.vertexAttrib2f(aTex, 1.0, 1.0);
+
+	// // 处理纹理数据
+	// const texture = gl.createTexture();
+	// gl.activeTexture(gl.TEXTURE0);
+	// gl.bindTexture(gl.TEXTURE_2D, texture);
+	// // 设置参数
+
+	// // 将图像上传到纹理
+	// gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGBA, gl.UNSIGNED_BYTE, img);
+	// gl.uniform1i(uImg, 0);
+
+	gl.drawArrays(gl.TRIANGLES, 0, 6);
+};
