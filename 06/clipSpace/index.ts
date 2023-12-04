@@ -1,4 +1,4 @@
-import { createProgram, createShader } from '../utils/game_helper.ts';
+import { createProgram, createShader } from '../../utils/game_helper.ts';
 
 const VERTEX_SHADER_SOURCE = `
     attribute vec4 aPosition;

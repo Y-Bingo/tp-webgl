@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Document</title>
+
+		<!-- load SystemJS itself from CDN -->
+		<script src="../systemJs/s.min.js"></script>
+		<script src="../systemJs/systemjs-babel.js"></script>
+		<link rel="stylesheet" type="text/css" href="./index.css" />
+	</head>
+	<body>
+		<canvas id="canvas" width="400" height="400"></canvas>
+	</body>
+	<script type="systemjs-importmap">
+		{
+			"imports": {
+				"main": "./index.ts"
+			}
+		}
+	</script>
+	<!-- load a locally hosted module -->
+	<script type="systemjs-module" src="import:main"></script>
+</html>
