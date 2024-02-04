@@ -1,4 +1,4 @@
-import { createProgram, createShader } from '../../utils/game_helper.ts';
+import { createProgram, createShader } from '../../utils/game_helper';
 
 const VERTEX_SHADER_SOURCE = `
     attribute vec4 aPosition;
@@ -59,11 +59,11 @@ for (let i = 0; i < 50; i++) {
 	gl.drawArrays(gl.TRIANGLES, 0, 6);
 }
 
-function rangeInt(range) {
+function rangeInt(range: number) {
 	return Math.floor(Math.random() * range);
 }
 
-function setRectangle(gl, x, y, w, h) {
+function setRectangle(gl: WebGLRenderingContext, x: number, y: number, w: number, h: number) {
 	const x1 = x;
 	const x2 = x + w;
 	const y1 = y;

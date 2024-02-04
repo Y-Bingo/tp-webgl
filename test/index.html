@@ -6,13 +6,23 @@
 		<title>Document</title>
 
 		<!-- load SystemJS itself from CDN -->
-		<script src="../systemJs/s.min.js"></script>
+		<script src="../systemJs/s.js"></script>
 		<script src="../systemJs/systemjs-babel.js"></script>
 		<link rel="stylesheet" type="text/css" href="./index.css" />
 	</head>
 	<body>
 		<canvas id="canvas" width="400" height="400"></canvas>
 	</body>
+	<script>
+		const existingHook = System.constructor.prototype.hookName;
+		System.constructor.prototype.hookName = function (args) {
+			return Promise.resolve(existingHook.call(this, args)).then(function (existingHookResult) {
+				// custom hook here
+				console.log(existingHookResult);
+				return 'custom loader';
+			});
+		};
+	</script>
 	<script type="systemjs-importmap">
 		{
 			"imports": {
