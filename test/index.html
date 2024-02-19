@@ -6,7 +6,7 @@
 		<title>Document</title>
 
 		<!-- load SystemJS itself from CDN -->
-		<script src="../systemJs/s.min.js"></script>
+		<script src="../systemJs/s.js"></script>
 		<script src="../systemJs/systemjs-babel.js"></script>
 		<link rel="stylesheet" type="text/css" href="./index.css" />
 	</head>
@@ -21,5 +21,6 @@
 		}
 	</script>
 	<!-- load a locally hosted module -->
+	<script src="../systemJs/customLoader.js"></script>
 	<script type="systemjs-module" src="import:main"></script>
 </html>
